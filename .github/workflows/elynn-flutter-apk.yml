@@ -1,0 +1,141 @@
+# ELYNN_FLUTTER_APK_WORKFLOW_V2
+name: Elynn Flutter APK Builder
+run-name: Elynn APK ${{ inputs.job_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: Elynn build job ID
+        required: true
+        type: string
+      input_ref:
+        description: Temporary branch containing the ZIP
+        required: true
+        type: string
+      input_path:
+        description: Repository path to Flutter ZIP
+        required: true
+        type: string
+      app_name:
+        description: Output APK display name
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout temporary input branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.input_ref }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Flutter stable
+        shell: bash
+        run: |
+          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter/bin/flutter" config --no-analytics
+          "$RUNNER_TEMP/flutter/bin/flutter" --version
+
+      - name: Validate and extract project
+        id: project
+        shell: bash
+        env:
+          INPUT_PATH: ${{ inputs.input_path }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, shutil, stat, zipfile
+          source = pathlib.Path(os.environ['INPUT_PATH']).resolve()
+          workspace = pathlib.Path.cwd().resolve()
+          if workspace not in source.parents:
+              raise SystemExit('Input path is outside repository workspace')
+          if not source.is_file():
+              raise SystemExit('Input ZIP not found')
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'flutter-project'
+          target.mkdir(parents=True, exist_ok=True)
+          max_files = 12000
+          max_size = 250 * 1024 * 1024
+          total = 0
+          with zipfile.ZipFile(source) as archive:
+              infos = archive.infolist()
+              if not infos or len(infos) > max_files:
+                  raise SystemExit('ZIP empty or contains too many entries')
+              for info in infos:
+                  name = info.filename.replace('\\', '/')
+                  parts = pathlib.PurePosixPath(name).parts
+                  if name.startswith('/') or '..' in parts or (parts and ':' in parts[0]):
+                      raise SystemExit(f'Unsafe ZIP path: {name}')
+                  mode = (info.external_attr >> 16) & 0xFFFF
+                  if stat.S_ISLNK(mode):
+                      raise SystemExit(f'Symlink rejected: {name}')
+                  total += info.file_size
+                  if total > max_size:
+                      raise SystemExit('Extracted ZIP is too large')
+              archive.extractall(target)
+          candidates = []
+          for pubspec in target.rglob('pubspec.yaml'):
+              if any(part in {'.git', '.dart_tool', 'build', '__MACOSX'} for part in pubspec.parts):
+                  continue
+              root = pubspec.parent
+              if (root / 'lib' / 'main.dart').is_file():
+                  candidates.append(root)
+          if not candidates:
+              raise SystemExit('pubspec.yaml and lib/main.dart were not found')
+          candidates.sort(key=lambda p: len(p.parts))
+          depth = len(candidates[0].parts)
+          shallow = [p for p in candidates if len(p.parts) == depth]
+          if len(shallow) != 1:
+              raise SystemExit('More than one Flutter project found')
+          root = shallow[0]
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as out:
+              out.write(f"root={root}\n")
+          PY
+
+      - name: Prepare Android project
+        working-directory: ${{ steps.project.outputs.root }}
+        shell: bash
+        run: |
+          if [ ! -d android ]; then flutter create --platforms=android .; fi
+          flutter pub get
+
+      - name: Build release APK
+        working-directory: ${{ steps.project.outputs.root }}
+        shell: bash
+        run: flutter build apk --release
+
+      - name: Collect APK
+        shell: bash
+        env:
+          PROJECT_ROOT: ${{ steps.project.outputs.root }}
+          APP_NAME: ${{ inputs.app_name }}
+        run: |
+          mkdir -p dist
+          APK="$PROJECT_ROOT/build/app/outputs/flutter-apk/app-release.apk"
+          if [ ! -f "$APK" ]; then APK="$(find "$PROJECT_ROOT/build" -type f -name '*.apk' | head -n 1)"; fi
+          test -n "$APK" && test -f "$APK"
+          SAFE_NAME="$(printf '%s' "$APP_NAME" | tr -cs 'A-Za-z0-9._-' '-' | sed 's/^-*//;s/-*$//')"
+          test -n "$SAFE_NAME" || SAFE_NAME="flutter-app"
+          cp "$APK" "dist/$SAFE_NAME.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: elynn-apk-${{ inputs.job_id }}
+          path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0
