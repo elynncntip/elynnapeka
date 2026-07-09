@@ -1,0 +1,233 @@
+# ELYNN_FLUTTER_APK_WORKFLOW_V7
+name: Elynn Flutter APK Builder
+run-name: Elynn APK ${{ inputs.job_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: Elynn build job ID
+        required: true
+        type: string
+      input_ref:
+        description: Temporary branch containing build assets
+        required: true
+        type: string
+      input_path:
+        description: Repository path to Flutter ZIP
+        required: true
+        type: string
+      icon_path:
+        description: Repository path to launcher icon bundle
+        required: true
+        type: string
+      app_name:
+        description: Android application display name
+        required: true
+        type: string
+      application_id:
+        description: Unique Android application ID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout temporary input branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.input_ref }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Flutter stable
+        shell: bash
+        run: |
+          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter/bin/flutter" config --no-analytics
+          "$RUNNER_TEMP/flutter/bin/flutter" --version
+
+      - name: Validate and extract project
+        id: project
+        shell: bash
+        env:
+          INPUT_PATH: ${{ inputs.input_path }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, stat, zipfile
+          source = pathlib.Path(os.environ['INPUT_PATH']).resolve()
+          workspace = pathlib.Path.cwd().resolve()
+          if source != workspace and workspace not in source.parents:
+              raise SystemExit('Input path is outside repository workspace')
+          if not source.is_file():
+              raise SystemExit('Input ZIP not found')
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'flutter-project'
+          target.mkdir(parents=True, exist_ok=True)
+          max_files = 12000
+          max_size = 250 * 1024 * 1024
+          total = 0
+          with zipfile.ZipFile(source) as archive:
+              infos = archive.infolist()
+              if not infos or len(infos) > max_files:
+                  raise SystemExit('ZIP empty or contains too many entries')
+              for info in infos:
+                  name = info.filename.replace('\\', '/')
+                  parts = pathlib.PurePosixPath(name).parts
+                  if name.startswith('/') or '..' in parts or (parts and ':' in parts[0]):
+                      raise SystemExit(f'Unsafe ZIP path: {name}')
+                  mode = (info.external_attr >> 16) & 0xFFFF
+                  if stat.S_ISLNK(mode):
+                      raise SystemExit(f'Symlink rejected: {name}')
+                  total += info.file_size
+                  if total > max_size:
+                      raise SystemExit('Extracted ZIP is too large')
+              archive.extractall(target)
+          candidates = []
+          for pubspec in target.rglob('pubspec.yaml'):
+              if any(part in {'.git', '.dart_tool', 'build', '__MACOSX'} for part in pubspec.parts):
+                  continue
+              root = pubspec.parent
+              if (root / 'lib' / 'main.dart').is_file():
+                  candidates.append(root)
+          if not candidates:
+              raise SystemExit('pubspec.yaml and lib/main.dart were not found')
+          candidates.sort(key=lambda item: len(item.parts))
+          depth = len(candidates[0].parts)
+          shallow = [item for item in candidates if len(item.parts) == depth]
+          if len(shallow) != 1:
+              raise SystemExit('More than one Flutter project found')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f"root={shallow[0]}\n")
+          PY
+
+      - name: Prepare Android project
+        working-directory: ${{ steps.project.outputs.root }}
+        shell: bash
+        run: |
+          if [ ! -d android ]; then flutter create --platforms=android .; fi
+          flutter pub get
+
+      - name: Apply requested app name and launcher icon
+        shell: bash
+        env:
+          PROJECT_ROOT: ${{ steps.project.outputs.root }}
+          APP_NAME: ${{ inputs.app_name }}
+          APPLICATION_ID: ${{ inputs.application_id }}
+          ICON_PATH: ${{ inputs.icon_path }}
+        run: |
+          python3 - <<'PY'
+          import html, os, pathlib, re, zipfile
+
+          project = pathlib.Path(os.environ['PROJECT_ROOT']).resolve()
+          workspace = pathlib.Path.cwd().resolve()
+          icon_zip = pathlib.Path(os.environ['ICON_PATH']).resolve()
+          app_name = os.environ['APP_NAME'].strip()
+          application_id = os.environ['APPLICATION_ID'].strip()
+          if not app_name:
+              raise SystemExit('Application name is empty')
+          if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){2,}', application_id):
+              raise SystemExit('Invalid Android application ID')
+          if icon_zip != workspace and workspace not in icon_zip.parents:
+              raise SystemExit('Icon path is outside repository workspace')
+          if not icon_zip.is_file():
+              raise SystemExit('Launcher icon bundle not found')
+
+          src_root = project / 'android' / 'app' / 'src'
+          main_manifest = src_root / 'main' / 'AndroidManifest.xml'
+          if not main_manifest.is_file():
+              raise SystemExit('AndroidManifest.xml not found')
+
+          def set_attr(source, attr, value):
+              pattern = re.compile(rf'\s{re.escape(attr)}\s*=\s*["\'][^"\']*["\']', re.I)
+              replacement = f' {attr}="{value}"'
+              if pattern.search(source):
+                  return pattern.sub(replacement, source, count=1)
+              return re.sub(r'^<application\b', f'<application{replacement}', source, count=1, flags=re.I)
+
+          patched = 0
+          for manifest in src_root.rglob('AndroidManifest.xml'):
+              xml = manifest.read_text(encoding='utf-8')
+              match = re.search(r'<application\b[\s\S]*?>', xml, flags=re.I)
+              if not match:
+                  continue
+              tag = match.group(0)
+              tag = set_attr(tag, 'android:label', html.escape(app_name, quote=True))
+              tag = set_attr(tag, 'android:icon', '@mipmap/elynn_launcher')
+              tag = set_attr(tag, 'android:roundIcon', '@mipmap/elynn_launcher')
+              manifest.write_text(xml[:match.start()] + tag + xml[match.end():], encoding='utf-8')
+              patched += 1
+          if not patched:
+              raise SystemExit('<application> tag not found')
+
+          gradle_candidates = [
+              project / 'android' / 'app' / 'build.gradle.kts',
+              project / 'android' / 'app' / 'build.gradle',
+          ]
+          gradle = next((item for item in gradle_candidates if item.is_file()), None)
+          if gradle is None:
+              raise SystemExit('android/app/build.gradle(.kts) not found')
+          gradle_text = gradle.read_text(encoding='utf-8')
+          pattern = re.compile(r'applicationId\s*(=\s*)?["\'][^"\']+["\']')
+          found = pattern.search(gradle_text)
+          if not found:
+              raise SystemExit('applicationId not found')
+          replacement = (f'applicationId = "{application_id}"'
+                         if re.search(r'applicationId\s*=', found.group(0))
+                         else f'applicationId "{application_id}"')
+          gradle.write_text(pattern.sub(replacement, gradle_text, count=1), encoding='utf-8')
+
+          densities = ('mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi')
+          res = project / 'android' / 'app' / 'src' / 'main' / 'res'
+          with zipfile.ZipFile(icon_zip) as archive:
+              names = set(archive.namelist())
+              for density in densities:
+                  source_name = f'mipmap-{density}/elynn_launcher.png'
+                  if source_name not in names:
+                      raise SystemExit(f'Launcher icon missing: {source_name}')
+                  target = res / f'mipmap-{density}' / 'elynn_launcher.png'
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(archive.read(source_name))
+          PY
+
+      - name: Build release APK
+        working-directory: ${{ steps.project.outputs.root }}
+        shell: bash
+        run: flutter build apk --release --split-per-abi
+
+      - name: Collect APK
+        shell: bash
+        env:
+          PROJECT_ROOT: ${{ steps.project.outputs.root }}
+          APP_NAME: ${{ inputs.app_name }}
+        run: |
+          mkdir -p dist
+          APK_DIR="$PROJECT_ROOT/build/app/outputs/flutter-apk"
+          APK="$APK_DIR/app-arm64-v8a-release.apk"
+          if [ ! -f "$APK" ]; then APK="$APK_DIR/app-release.apk"; fi
+          if [ ! -f "$APK" ]; then APK="$APK_DIR/app-armeabi-v7a-release.apk"; fi
+          if [ ! -f "$APK" ]; then APK="$(find "$PROJECT_ROOT/build" -type f -name '*.apk' -print | sort | head -n 1)"; fi
+          test -n "$APK" && test -f "$APK"
+          SAFE_NAME="$(printf '%s' "$APP_NAME" | tr -cs 'A-Za-z0-9._-' '-' | sed 's/^-*//;s/-*$//')"
+          test -n "$SAFE_NAME" || SAFE_NAME="flutter-app"
+          cp "$APK" "dist/$SAFE_NAME.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: elynn-apk-${{ inputs.job_id }}
+          path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0
