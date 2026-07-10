@@ -333,7 +333,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          flutter build apk --release --split-per-abi --no-tree-shake-icons -v 2>&1 | tee "$DIAG_DIR/flutter-build.log"
+          flutter build apk --release --no-tree-shake-icons -v 2>&1 | tee "$DIAG_DIR/flutter-build.log"
 
       - name: Collect APK
         if: steps.apk_build.outcome == 'success'
@@ -345,8 +345,8 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           APK_DIR="$PROJECT_ROOT/build/app/outputs/flutter-apk"
-          APK="$APK_DIR/app-arm64-v8a-release.apk"
-          if [ ! -f "$APK" ]; then APK="$APK_DIR/app-release.apk"; fi
+          APK="$APK_DIR/app-release.apk"
+          if [ ! -f "$APK" ]; then APK="$APK_DIR/app-arm64-v8a-release.apk"; fi
           if [ ! -f "$APK" ]; then APK="$APK_DIR/app-armeabi-v7a-release.apk"; fi
           if [ ! -f "$APK" ]; then APK="$(find "$PROJECT_ROOT/build" -type f -name '*.apk' -print | sort | head -n 1)"; fi
           test -n "$APK" && test -f "$APK"
