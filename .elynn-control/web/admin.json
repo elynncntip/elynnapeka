@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "username": "admin",
+  "passwordHash": "d6a863bc7bfe420703a99331be667537cc3ad1246cb3bfa388d4616de1ad6e2bba6af7d87db3ac1fc7a859b4dc794c89e214f7803b963f6b00476527e2a2e025",
+  "passwordSalt": "LVwWSkNG8LpnpWizdb/KQQ==",
+  "pinHash": "790d547967ab5b48c5ffb0e4fd1a90c596d08ea5aa01785affa34d6b3c9c25cc270f1ee37e905913c49dc60806dd077dd71c2264f15a40975d6d5da9b4de89ac",
+  "pinSalt": "kKb18oqSXCJat6I0jG3xZg==",
+  "createdAt": 1788421038351
+}
