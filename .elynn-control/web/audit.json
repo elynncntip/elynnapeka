@@ -24,6 +24,18 @@
         "botId": "bot_56f9d334f30e"
       },
       "scheduledAt": 0
+    },
+    {
+      "at": 1788427993481,
+      "event": "command_created",
+      "username": "admin",
+      "commandId": "cmd_1788427992453_491ed1f8",
+      "action": "owner_message",
+      "target": {
+        "type": "single",
+        "botId": "bot_186d28c40912"
+      },
+      "scheduledAt": 0
     }
   ]
 }
