@@ -6,6 +6,12 @@
       "event": "admin_setup",
       "username": "admin",
       "ip": "103.184.18.65"
+    },
+    {
+      "at": 1788421091441,
+      "event": "login_success",
+      "username": "admin",
+      "ip": "103.184.18.65"
     }
   ]
 }
