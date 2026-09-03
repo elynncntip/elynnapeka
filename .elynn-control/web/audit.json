@@ -12,6 +12,18 @@
       "event": "login_success",
       "username": "admin",
       "ip": "103.184.18.65"
+    },
+    {
+      "at": 1788421121216,
+      "event": "command_created",
+      "username": "admin",
+      "commandId": "cmd_1788421120200_7e317ae3",
+      "action": "owner_message",
+      "target": {
+        "type": "single",
+        "botId": "bot_56f9d334f30e"
+      },
+      "scheduledAt": 0
     }
   ]
 }
