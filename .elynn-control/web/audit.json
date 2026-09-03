@@ -48,6 +48,17 @@
         "botId": "bot_1c4f2d990382"
       },
       "scheduledAt": 0
+    },
+    {
+      "at": 1788433723842,
+      "event": "command_created",
+      "username": "admin",
+      "commandId": "cmd_1788433722881_b176c166",
+      "action": "emergency_lock",
+      "target": {
+        "type": "all"
+      },
+      "scheduledAt": 0
     }
   ]
 }
