@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "commandId": "cmd_1788421120200_7e317ae3",
+  "target": {
+    "type": "single",
+    "botId": "bot_56f9d334f30e"
+  },
+  "action": "owner_message",
+  "payloadEnc": {
+    "version": 1,
+    "algorithm": "aes-256-gcm",
+    "kdf": "pbkdf2-sha256",
+    "iterations": 310000,
+    "salt": "5wrKiAAdpsQ9GSKBxDuBxg==",
+    "iv": "I+ecoHpvUnx2DxIh",
+    "authTag": "9pk8o6wGihFLVJKW6f7Pkw==",
+    "ciphertext": "7WyC6+qUfeaBJwoSH/NEf1I="
+  },
+  "status": "pending",
+  "createdAt": 1788421120200,
+  "scheduledAt": 0,
+  "expiresAt": 1788507520200,
+  "createdBy": "admin"
+}
