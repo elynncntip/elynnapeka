@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "rows": [
+    {
+      "at": 1788421039279,
+      "event": "admin_setup",
+      "username": "admin",
+      "ip": "103.184.18.65"
+    }
+  ]
+}
