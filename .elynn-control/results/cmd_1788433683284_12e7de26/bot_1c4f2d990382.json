@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "commandId": "cmd_1788433683284_12e7de26",
+  "action": "owner_message",
+  "botId": "bot_1c4f2d990382",
+  "status": "success",
+  "detail": {
+    "delivered": true
+  },
+  "finishedAt": 1788433691900
+}
