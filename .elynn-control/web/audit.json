@@ -76,6 +76,17 @@
       "event": "login_success",
       "username": "admin",
       "ip": "103.184.18.69"
+    },
+    {
+      "at": 1788509886092,
+      "event": "command_created",
+      "username": "admin",
+      "commandId": "cmd_1788509885071_6b129bba",
+      "action": "emergency_lock",
+      "target": {
+        "type": "all"
+      },
+      "scheduledAt": 0
     }
   ]
 }
