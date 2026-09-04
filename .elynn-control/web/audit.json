@@ -70,6 +70,12 @@
         "type": "all"
       },
       "scheduledAt": 0
+    },
+    {
+      "at": 1788509878685,
+      "event": "login_success",
+      "username": "admin",
+      "ip": "103.184.18.69"
     }
   ]
 }
