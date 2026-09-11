@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "botId": "bot_d07d978fe3c7",
+  "number": "62896••••5669",
+  "status": "offline",
+  "type": "secondary",
+  "name": "Jadibot-5669",
+  "uptimeSeconds": 12789,
+  "botVersion": "1.3.3",
+  "groupCount": 0,
+  "userCount": 0,
+  "control": {
+    "maintenance": false,
+    "mode": "inherit",
+    "disabledCategories": [],
+    "disabledCommands": [],
+    "rateLimitPerMinute": 0,
+    "emergencyLock": false,
+    "queuePending": 0
+  },
+  "lastSeen": 1789132763715
+}
