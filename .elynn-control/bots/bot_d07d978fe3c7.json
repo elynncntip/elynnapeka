@@ -5,7 +5,7 @@
   "status": "online",
   "type": "secondary",
   "name": "Jadibot-5669",
-  "uptimeSeconds": 78089,
+  "uptimeSeconds": 78134,
   "botVersion": "1.3.3",
   "groupCount": 1,
   "userCount": 0,
@@ -18,5 +18,5 @@
     "emergencyLock": false,
     "queuePending": 0
   },
-  "lastSeen": 1789198063581
+  "lastSeen": 1789198108964
 }
