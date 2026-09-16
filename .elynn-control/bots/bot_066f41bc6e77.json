@@ -5,7 +5,7 @@
   "status": "online",
   "type": "primary",
   "name": "main",
-  "uptimeSeconds": 57157,
+  "uptimeSeconds": 57202,
   "botVersion": "1.3.3",
   "groupCount": 8,
   "userCount": 2,
@@ -18,5 +18,5 @@
     "emergencyLock": false,
     "queuePending": 0
   },
-  "lastSeen": 1789522723017
+  "lastSeen": 1789522768011
 }
