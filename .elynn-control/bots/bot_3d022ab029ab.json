@@ -5,7 +5,7 @@
   "status": "offline",
   "type": "secondary",
   "name": "Jadibot-9184",
-  "uptimeSeconds": 15652,
+  "uptimeSeconds": 15697,
   "botVersion": "1.3.3",
   "groupCount": 0,
   "userCount": 4,
@@ -18,5 +18,5 @@
     "emergencyLock": false,
     "queuePending": 0
   },
-  "lastSeen": 1789632678685
+  "lastSeen": 1789632723842
 }
