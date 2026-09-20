@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "commandId": "cmd_1789875162270_7e853569",
+  "action": "emergency_lock",
+  "botId": "runtime",
+  "status": "success",
+  "detail": {
+    "enabled": false,
+    "message": "Bot sedang dikunci sementara oleh administrator."
+  },
+  "finishedAt": 1789875188033
+}
