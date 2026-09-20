@@ -126,6 +126,17 @@
         "type": "all"
       },
       "scheduledAt": 0
+    },
+    {
+      "at": 1789875163209,
+      "event": "command_created",
+      "username": "admin",
+      "commandId": "cmd_1789875162270_7e853569",
+      "action": "emergency_lock",
+      "target": {
+        "type": "all"
+      },
+      "scheduledAt": 0
     }
   ]
 }
