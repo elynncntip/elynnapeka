@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "commandId": "cmd_1789874500488_a17cd8a2",
+  "target": {
+    "type": "all"
+  },
+  "action": "emergency_lock",
+  "payloadEnc": {
+    "version": 1,
+    "algorithm": "aes-256-gcm",
+    "kdf": "pbkdf2-sha256",
+    "iterations": 310000,
+    "salt": "u8FLD1qhjv1gsMJCoN6ZMQ==",
+    "iv": "8VB5hy2VdXBGtqOi",
+    "authTag": "oTn2bEqu4ov3Mp1J2TDUXQ==",
+    "ciphertext": "bmfzlkaPoaWIqq7kuyHTfPnqAq563m9zDoAEDhhUVvxL5Ro6LMGukK2hX+9EqxfF3uniTIiiyWRwNweW83AOfoS9Wh6hOhfImsQ/eew="
+  },
+  "status": "pending",
+  "createdAt": 1789874500488,
+  "scheduledAt": 0,
+  "expiresAt": 1789960900488,
+  "createdBy": "admin"
+}
