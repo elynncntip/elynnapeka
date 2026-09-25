@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "botId": "bot_5e4556a17339",
+  "number": "62831••••1203",
+  "status": "offline",
+  "type": "primary",
+  "name": "main",
+  "uptimeSeconds": 8,
+  "botVersion": "1.3.3",
+  "groupCount": 0,
+  "userCount": 0,
+  "control": {
+    "maintenance": false,
+    "mode": "inherit",
+    "disabledCategories": [],
+    "disabledCommands": [],
+    "rateLimitPerMinute": 0,
+    "emergencyLock": false,
+    "queuePending": 0
+  },
+  "lastSeen": 1790334434952
+}
