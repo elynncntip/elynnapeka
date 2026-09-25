@@ -2,12 +2,12 @@
   "version": 1,
   "botId": "bot_4715743f27cb",
   "number": "62851••••7989",
-  "status": "online",
+  "status": "offline",
   "type": "primary",
   "name": "main",
-  "uptimeSeconds": 499,
+  "uptimeSeconds": 544,
   "botVersion": "1.3.3",
-  "groupCount": 1,
+  "groupCount": 0,
   "userCount": 0,
   "control": {
     "maintenance": false,
@@ -18,5 +18,5 @@
     "emergencyLock": false,
     "queuePending": 0
   },
-  "lastSeen": 1790337606486
+  "lastSeen": 1790337651043
 }
